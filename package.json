@@ -1,0 +1,30 @@
+{
+  "name": "movie-cli",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "bin": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "pkg . --targets node18-linux-x64 --output dist/movie-cli-linux && pkg . --targets node18-macos-x64 --output dist/movie-cli-macos && pkg . --targets node18-win-x64 --output dist/movie-cli-win.exe"
+  },
+  "pkg": {
+    "targets": [
+      "node18-linux-x64",
+      "node18-macos-x64",
+      "node18-win-x64"
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nethbotheju/movie-cli.git"
+  },
+  "keywords": [],
+  "author": "nethbotheju@gmail.com",
+  "license": "",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/nethbotheju/movie-cli/issues"
+  },
+  "homepage": "https://github.com/nethbotheju/movie-cli#readme"
+}
