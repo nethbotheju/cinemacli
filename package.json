@@ -26,5 +26,8 @@
   "bugs": {
     "url": "https://github.com/nethbotheju/movie-cli/issues"
   },
-  "homepage": "https://github.com/nethbotheju/movie-cli#readme"
+  "homepage": "https://github.com/nethbotheju/movie-cli#readme",
+  "dependencies": {
+    "inquirer": "^8.0.0"
+  }
 }
