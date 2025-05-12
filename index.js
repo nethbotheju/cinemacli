@@ -17,13 +17,18 @@ async function main() {
   if (contentType === "Movie") {
     const { movieName, movieYear, movieQuality } = await movie();
 
-    const keyword = movieName + " " + movieYear + " " + movieQuality;
+    const keyword = `${movieName} ${movieYear} ${movieQuality}`;
     const htmlResponse = await movieGet(keyword);
     const result = extractTop5Results(htmlResponse);
     console.log(result);
   } else {
     const { seriesName, seriesSeason, seriesEpisode, seriesQuality } =
       await tvSeries();
+
+    const keyword = `${seriesName} s${seriesSeason}e${seriesEpisode} ${seriesQuality}`;
+    const htmlResponse = await tvGet(keyword);
+    const result = extractTop5Results(htmlResponse);
+    console.log(result);
   }
 }
 
@@ -147,6 +152,19 @@ async function movieGet(keyword) {
   const url = `https://1337x.to/category-search/${encodeURIComponent(
     keyword
   )}/Movies/1/`;
+  try {
+    const response = await axios.get(url);
+    return response.data;
+  } catch (error) {
+    console.error("Error:", error.message);
+    return "";
+  }
+}
+
+async function tvGet(keyword) {
+  const url = `https://1337x.to/category-search/${encodeURIComponent(
+    keyword
+  )}/TV/1/`;
   try {
     const response = await axios.get(url);
     return response.data;
