@@ -1,9 +1,23 @@
 #!/usr/bin/env node
 
+// Peerflix hasn't been updated in 5–7 years and still uses 'new Buffer()',
+// which is deprecated in newer Node.js versions. It should be replaced with 'Buffer.alloc()', etc.
+// Try to patch the package and fix it.
+process.removeAllListeners("warning");
+process.on("warning", (e) => {
+  if (e.name === "DeprecationWarning" && e.code === "DEP0005") {
+    // Ignore the Buffer() deprecation warning silently
+  } else {
+    console.warn(e);
+  }
+});
+
 const inquirer = require("inquirer");
 const cheerio = require("cheerio");
 const axios = require("axios");
 const readline = require("readline");
+const peerflix = require("peerflix");
+const { exec } = require("child_process");
 
 async function main() {
   const { contentType } = await inquirer.prompt([
@@ -26,6 +40,8 @@ async function main() {
     const magnetURL = await getMagentURL(option.link);
 
     console.log("The magnetURL is: " + magnetURL);
+
+    openInVlc(magnetURL);
   } else {
     const { seriesName, seriesSeason, seriesEpisode, seriesQuality } =
       await tvSeries();
@@ -38,6 +54,8 @@ async function main() {
     const magnetURL = await getMagentURL(option.link);
 
     console.log("The magnetURL is: " + magnetURL);
+
+    openInVlc(magnetURL);
   }
 }
 
@@ -249,4 +267,23 @@ async function getMagentURL(url) {
     console.error("Error:", error.message);
     return "";
   }
+}
+
+function openInVlc(magnetURL) {
+  const engine = peerflix(magnetURL, { vlc: true });
+
+  engine.on("ready", () => {
+    const url = `http://localhost:${engine.server.address().port}/`;
+
+    console.log("Streaming to:", url);
+
+    exec(`vlc "${url}"`, (err) => {
+      if (err) {
+        console.error("Failed to open VLC:", err);
+        console.log(
+          "Please make sure VLC is installed and its path is added to your environment variables. Alternatively, you can copy the HTTP stream URL and open it in any video player that supports streaming."
+        );
+      }
+    });
+  });
 }
