@@ -22,7 +22,6 @@ async function main() {
     const htmlResponse = await movieGet(keyword);
     const results = extractTop5Results(htmlResponse);
 
-    console.log(results);
     const option = await selectStreamOption(results);
     const magnetURL = await getMagentURL(option.link);
 
