@@ -22,7 +22,11 @@ async function main() {
     const htmlResponse = await movieGet(keyword);
     const results = extractTop5Results(htmlResponse);
 
-    selectStreamOption(results);
+    console.log(results);
+    const option = await selectStreamOption(results);
+    const magnetURL = await getMagentURL(option.link);
+
+    console.log("The magnetURL is: " + magnetURL);
   } else {
     const { seriesName, seriesSeason, seriesEpisode, seriesQuality } =
       await tvSeries();
@@ -31,7 +35,10 @@ async function main() {
     const htmlResponse = await tvGet(keyword);
     const results = extractTop5Results(htmlResponse);
 
-    selectStreamOption(results);
+    const option = await selectStreamOption(results);
+    const magnetURL = await getMagentURL(option.link);
+
+    console.log("The magnetURL is: " + magnetURL);
   }
 }
 
@@ -206,18 +213,41 @@ function selectStreamOption(results) {
     output: process.stdout,
   });
 
-  function ask() {
-    rl.question("\nEnter your choice: ", (answer) => {
-      const index = parseInt(answer) - 1;
-      if (!isNaN(index) && results[index]) {
-        console.log(`\nYou selected: ${results[index].name}`);
-        rl.close();
-      } else {
-        console.log("Invalid selection. Try again.");
-        ask();
-      }
-    });
-  }
+  return new Promise((resolve, reject) => {
+    function ask() {
+      rl.question("\nEnter your choice: ", (answer) => {
+        const index = parseInt(answer) - 1;
+        if (!isNaN(index) && index >= 0 && index < results.length) {
+          console.log(`\nYou selected: ${results[index].name}`);
+          rl.close();
+          resolve(results[index]);
+        } else {
+          console.log("Invalid selection. Try again.");
+          ask();
+        }
+      });
+    }
 
-  ask();
+    ask();
+  });
+}
+
+async function getMagentURL(url) {
+  try {
+    const response = await axios.get(url);
+
+    const regex = /var\s+mainMagnetURL\s*=\s*"(.*?)"\s*;/;
+
+    const match = response.data.match(regex);
+
+    if (match && match[1]) {
+      return match[1];
+    } else {
+      console.error("mainMagnetURL not found in the HTML content.");
+      return null;
+    }
+  } catch (error) {
+    console.error("Error:", error.message);
+    return "";
+  }
 }
