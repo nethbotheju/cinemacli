@@ -6,7 +6,7 @@
   "bin": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "pkg . --targets node18-linux-x64 --output dist/movie-cli-linux && pkg . --targets node18-macos-x64 --output dist/movie-cli-macos && pkg . --targets node18-win-x64 --output dist/movie-cli-win.exe"
+    "build": "pkg dist/index.js --targets node18-linux-x64 --output dist/movie-cli-linux && pkg dist/index.js --targets node18-macos-x64 --output dist/movie-cli-macos && pkg dist/index.js --targets node18-win-x64 --output dist/movie-cli-win.exe"
   },
   "pkg": {
     "targets": [
