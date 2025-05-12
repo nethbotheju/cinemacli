@@ -3,6 +3,7 @@
 const inquirer = require("inquirer");
 const cheerio = require("cheerio");
 const axios = require("axios");
+const readline = require("readline");
 
 async function main() {
   const { contentType } = await inquirer.prompt([
@@ -19,16 +20,18 @@ async function main() {
 
     const keyword = `${movieName} ${movieYear} ${movieQuality}`;
     const htmlResponse = await movieGet(keyword);
-    const result = extractTop5Results(htmlResponse);
-    console.log(result);
+    const results = extractTop5Results(htmlResponse);
+
+    selectStreamOption(results);
   } else {
     const { seriesName, seriesSeason, seriesEpisode, seriesQuality } =
       await tvSeries();
 
     const keyword = `${seriesName} s${seriesSeason}e${seriesEpisode} ${seriesQuality}`;
     const htmlResponse = await tvGet(keyword);
-    const result = extractTop5Results(htmlResponse);
-    console.log(result);
+    const results = extractTop5Results(htmlResponse);
+
+    selectStreamOption(results);
   }
 }
 
@@ -172,4 +175,49 @@ async function tvGet(keyword) {
     console.error("Error:", error.message);
     return "";
   }
+}
+
+function selectStreamOption(results) {
+  const nameWidth = Math.max(...results.map((r) => r.name.length), 40);
+  const sizeWidth = Math.max(...results.map((r) => String(r.size).length), 10);
+  const seedersWidth = 8;
+  const leechersWidth = 8;
+
+  const header = `${"".padEnd(2)} ${"Name".padEnd(nameWidth)} | ${"Size".padEnd(
+    sizeWidth
+  )} | ${"Seeders".padEnd(seedersWidth)} | ${"Leechers".padEnd(leechersWidth)}`;
+  const separator = "-".repeat(header.length);
+
+  console.log("\nSelect the server you need to stream:\n");
+  console.log(header);
+  console.log(separator);
+
+  results.forEach((result, index) => {
+    const line = `${String(index + 1).padEnd(3)}${result.name.padEnd(
+      nameWidth
+    )} | ${String(result.size).padEnd(sizeWidth)} | ${String(
+      result.seeders
+    ).padEnd(seedersWidth)} | ${String(result.leechers).padEnd(leechersWidth)}`;
+    console.log(line);
+  });
+
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+
+  function ask() {
+    rl.question("\nEnter your choice: ", (answer) => {
+      const index = parseInt(answer) - 1;
+      if (!isNaN(index) && results[index]) {
+        console.log(`\nYou selected: ${results[index].name}`);
+        rl.close();
+      } else {
+        console.log("Invalid selection. Try again.");
+        ask();
+      }
+    });
+  }
+
+  ask();
 }
