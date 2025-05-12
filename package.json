@@ -28,6 +28,8 @@
   },
   "homepage": "https://github.com/nethbotheju/movie-cli#readme",
   "dependencies": {
+    "axios": "^1.9.0",
+    "cheerio": "^1.0.0",
     "inquirer": "^8.0.0"
   }
 }

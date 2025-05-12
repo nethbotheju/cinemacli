@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 
 const inquirer = require("inquirer");
+const cheerio = require("cheerio");
+const axios = require("axios");
 
 async function main() {
   const { contentType } = await inquirer.prompt([
@@ -15,18 +17,13 @@ async function main() {
   if (contentType === "Movie") {
     const { movieName, movieYear, movieQuality } = await movie();
 
-    console.log("\n🎬 Movie Information:");
-    console.log("Name:", movieName);
-    console.log("Year:", movieYear);
-    console.log("Quality:", movieQuality);
+    const keyword = movieName + " " + movieYear + " " + movieQuality;
+    const htmlResponse = await movieGet(keyword);
+    const result = extractTop5Results(htmlResponse);
+    console.log(result);
   } else {
     const { seriesName, seriesSeason, seriesEpisode, seriesQuality } =
       await tvSeries();
-    console.log("\n📺 TV Series Info:");
-    console.log("Name:", seriesName);
-    console.log("Season:", seriesSeason);
-    console.log("Episode:", seriesEpisode);
-    console.log("Quality:", seriesQuality);
   }
 }
 
@@ -97,3 +94,64 @@ async function tvSeries() {
 }
 
 main();
+
+function extractTop5Results(html) {
+  const $ = cheerio.load(html);
+  const results = [];
+  const baseUrl = "https://1337x.to"; // Define the base URL
+
+  // Select the table rows, limit to the first 5
+  const rows = $("table.table-list tbody tr").slice(0, 5);
+
+  rows.each((index, element) => {
+    const $row = $(element);
+
+    // Find the second <a> tag within the name column for name and link
+    const nameLinkElement = $row.find("td.coll-1.name a").eq(1);
+    const name = nameLinkElement.text().trim();
+    const relativeLink = nameLinkElement.attr("href");
+    const torrentLink = relativeLink ? baseUrl + relativeLink : "N/A";
+
+    const seeders =
+      parseInt($row.find("td.coll-2.seeds").text().trim(), 10) || 0;
+    const leechers =
+      parseInt($row.find("td.coll-3.leeches").text().trim(), 10) || 0;
+    const time = $row.find("td.coll-date").text().trim();
+
+    // Extract size text (it's the first text node within the td)
+    const sizeElement = $row.find("td.coll-4");
+    const size = sizeElement.contents().first().text().trim(); // Get only the first text node content
+
+    // Find the uploader link text
+    const uploaderLinkElement = $row.find("td.coll-5 a");
+    const uploader =
+      uploaderLinkElement.length > 0
+        ? uploaderLinkElement.text().trim()
+        : "N/A";
+
+    results.push({
+      name: name,
+      seeders: seeders,
+      leechers: leechers,
+      time: time,
+      size: size,
+      uploader: uploader,
+      link: torrentLink,
+    });
+  });
+
+  return results;
+}
+
+async function movieGet(keyword) {
+  const url = `https://1337x.to/category-search/${encodeURIComponent(
+    keyword
+  )}/Movies/1/`;
+  try {
+    const response = await axios.get(url);
+    return response.data;
+  } catch (error) {
+    console.error("Error:", error.message);
+    return "";
+  }
+}
