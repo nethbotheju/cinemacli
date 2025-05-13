@@ -45,23 +45,35 @@ async function main() {
     readline.clearLine(process.stdout, 0);
     readline.cursorTo(process.stdout, 0);
 
-    const option = await selectStreamOption(results);
+    while (true) {
+      const option = await selectStreamOption(results);
 
-    console.log(chalk.blue.bold("\n🔍 Extracting magnet link..."));
-    const magnetURL = await getMagentURL(option.link);
+      console.log(chalk.blue.bold("\n🔍 Extracting magnet link..."));
+      const magnetURL = await getMagentURL(option.link);
 
-    // Remove "Extracting magnet link" line
-    readline.moveCursor(process.stdout, 0, -2);
-    readline.clearLine(process.stdout, 0);
-    readline.cursorTo(process.stdout, 0);
+      // Remove "Extracting magnet link" line
+      readline.moveCursor(process.stdout, 0, -2);
+      readline.clearLine(process.stdout, 0);
+      readline.cursorTo(process.stdout, 0);
 
-    console.log(
-      chalk.green.bold("\n🔗 The magnet URL is: ") +
-        chalk.white.underline(magnetURL) +
-        "\n"
-    );
+      console.log(
+        chalk.green.bold("\n🔗 The magnet URL is: ") +
+          chalk.white.underline(magnetURL) +
+          "\n"
+      );
 
-    openInVlc(magnetURL);
+      const success = await openInVlc(magnetURL);
+
+      if (success) {
+        break;
+      }
+
+      console.log(
+        chalk.red.bold(
+          "\n❌  Streaming failed: Unable to start the server. Please try another server option.\n"
+        )
+      );
+    }
   } else {
     const { seriesName, seriesSeason, seriesEpisode, seriesQuality } =
       await tvSeries();
@@ -77,23 +89,35 @@ async function main() {
     readline.clearLine(process.stdout, 0);
     readline.cursorTo(process.stdout, 0);
 
-    const option = await selectStreamOption(results);
+    while (true) {
+      const option = await selectStreamOption(results);
 
-    console.log(chalk.blue.bold("\n🔍 Extracting magnet link..."));
-    const magnetURL = await getMagentURL(option.link);
+      console.log(chalk.blue.bold("\n🔍 Extracting magnet link..."));
+      const magnetURL = await getMagentURL(option.link);
 
-    // Remove "Extracting magnet link" line
-    readline.moveCursor(process.stdout, 0, -2);
-    readline.clearLine(process.stdout, 0);
-    readline.cursorTo(process.stdout, 0);
+      // Remove "Extracting magnet link" line
+      readline.moveCursor(process.stdout, 0, -2);
+      readline.clearLine(process.stdout, 0);
+      readline.cursorTo(process.stdout, 0);
 
-    console.log(
-      chalk.green.bold("\n🔗 The magnet URL is: ") +
-        chalk.white.underline(magnetURL) +
-        "\n"
-    );
+      console.log(
+        chalk.green.bold("\n🔗 The magnet URL is: ") +
+          chalk.white.underline(magnetURL) +
+          "\n"
+      );
 
-    openInVlc(magnetURL);
+      const success = await openInVlc(magnetURL);
+
+      if (success) {
+        break;
+      }
+
+      console.log(
+        chalk.red.bold(
+          "\n❌  Streaming failed: Unable to start the server. Please try another server option.\n"
+        )
+      );
+    }
   }
 }
 
@@ -221,9 +245,16 @@ async function movieGet(keyword) {
     const response = await axios.get(url);
     return response.data;
   } catch (error) {
-    console.error(
-      chalk.red.bold("❌ Error:") + chalk.white(` ${error.message}`)
-    );
+    if (error.code === "ENOTFOUND") {
+      console.error(
+        chalk.red.bold("❌ Network error:") +
+          chalk.white(" Please check your internet connection.")
+      );
+    } else {
+      console.error(
+        chalk.red.bold("❌ Error:") + chalk.white(` ${error.message}`)
+      );
+    }
     process.exit(1);
   }
 }
@@ -236,9 +267,16 @@ async function tvGet(keyword) {
     const response = await axios.get(url);
     return response.data;
   } catch (error) {
-    console.error(
-      chalk.red.bold("❌ Error:") + chalk.white(` ${error.message}`)
-    );
+    if (error.code === "ENOTFOUND") {
+      console.error(
+        chalk.red.bold("❌ Network error:") +
+          chalk.white(" Please check your internet connection.")
+      );
+    } else {
+      console.error(
+        chalk.red.bold("❌ Error:") + chalk.white(` ${error.message}`)
+      );
+    }
     process.exit(1);
   }
 }
@@ -311,63 +349,97 @@ async function getMagentURL(url) {
       process.exit(1);
     }
   } catch (error) {
-    console.error(
-      chalk.red.bold("❌ Error:") + chalk.white(` ${error.message}`)
-    );
+    if (error.code === "ENOTFOUND") {
+      console.error(
+        chalk.red.bold("❌ Network error:") +
+          chalk.white(" Please check your internet connection.")
+      );
+    } else {
+      console.error(
+        chalk.red.bold("❌ Error:") + chalk.white(` ${error.message}`)
+      );
+    }
     process.exit(1);
   }
 }
 
 function openInVlc(magnetURL) {
-  console.log(
-    chalk.green.bold("🚀 Creating and starting the local streaming server...")
-  );
-
-  const engine = peerflix(magnetURL, { vlc: true });
-
-  engine.on("ready", () => {
-    const url = `http://localhost:${engine.server.address().port}/`;
-
-    // Remove "Creating and starting the local streaming server" line
-    readline.moveCursor(process.stdout, 0, -1);
-    readline.clearLine(process.stdout, 0);
-    readline.cursorTo(process.stdout, 0);
-
+  return new Promise((resolve) => {
     console.log(
-      chalk.green.bold("📺 The video is streaming to: ") +
-        chalk.cyan.underline(url)
+      chalk.green.bold("🚀 Creating and starting the local streaming server...")
     );
 
-    console.log(
-      chalk.cyan.bold("\n🎬 Opening video stream with VLC player...")
-    );
+    const engine = peerflix(magnetURL, { vlc: true });
 
-    const vlc = spawn("vlc", [url]);
+    let isReady = false;
 
-    vlc.on("spawn", () => {
-      console.log(chalk.green.bold("\n✔️ VLC launched successfully"));
+    // Set a 10-second timeout
+    const timeout = setTimeout(() => {
+      if (!isReady) {
+        // Remove "Creating and starting the local streaming server" line
+        readline.moveCursor(process.stdout, 0, -1);
+        readline.clearLine(process.stdout, 0);
+        readline.cursorTo(process.stdout, 0);
+
+        engine.destroy();
+        resolve(false);
+      }
+    }, 15_000);
+
+    engine.on("ready", () => {
+      isReady = true;
+      clearTimeout(timeout);
+
+      const url = `http://localhost:${engine.server.address().port}/`;
+
+      // Remove "Creating and starting the local streaming server" line
+      readline.moveCursor(process.stdout, 0, -1);
+      readline.clearLine(process.stdout, 0);
+      readline.cursorTo(process.stdout, 0);
 
       console.log(
-        chalk.yellow.bold("\n⚠️  Warning:") +
+        chalk.green.bold("📺 The video is streaming to: ") +
+          chalk.cyan.underline(url)
+      );
+
+      console.log(
+        chalk.cyan.bold("\n🎬 Opening video stream with VLC player...")
+      );
+
+      const vlc = spawn("vlc", [url]);
+
+      vlc.on("spawn", () => {
+        console.log(chalk.green.bold("\n✔️ VLC launched successfully"));
+
+        console.log(
+          chalk.yellow.bold("\n⚠️  Warning:") +
+            chalk.yellow(
+              " Please do not close this terminal — the streaming server will shut down if you do. Make sure the terminal stays open while streaming through VLC.\n" +
+                " Also, if you decide to close VLC, please make sure to terminate this terminal as well — otherwise, the server will keep running in the background.\n"
+            )
+        );
+        resolve(true);
+      });
+
+      vlc.on("error", (err) => {
+        console.error(
+          chalk.red.bold("\n❌ Failed to open VLC:"),
+          chalk.red(err)
+        );
+        console.log(
           chalk.yellow(
-            " Please do not close this terminal — the streaming server will shut down if you do. Make sure the terminal stays open while streaming through VLC.\n" +
-              " Also, if you decide to close VLC, please make sure to terminate this terminal as well — otherwise, the server will keep running in the background.\n"
+            "\n⚠️  Please make sure VLC is installed and its path is added to your environment variables."
           )
-      );
-    });
-
-    vlc.on("error", (err) => {
-      console.error(chalk.red.bold("\n❌ Failed to open VLC:"), chalk.red(err));
-      console.log(
-        chalk.yellow(
-          "\n⚠️  Please make sure VLC is installed and its path is added to your environment variables."
-        )
-      );
-      chalk.yellow(
-        "\n💡 Alternatively, you can copy the HTTP stream URL and open it in any video player that supports streaming.\n" +
-          "⚠️  Regardless of whether you're using VLC or another player, please do not close this terminal — the streaming server will shut down if the terminal is closed.\n" +
-          "⚠️  If you close video player, make sure to terminate this terminal manually as well — otherwise, the server will keep running in the background.\n"
-      );
+        );
+        console.log(
+          chalk.yellow(
+            "\n💡 Alternatively, you can copy the HTTP stream URL and open it in any video player that supports streaming.\n" +
+              "⚠️  Regardless of whether you're using VLC or another player, please do not close this terminal — the streaming server will shut down if the terminal is closed.\n" +
+              "⚠️  If you close video player, make sure to terminate this terminal manually as well — otherwise, the server will keep running in the background.\n"
+          )
+        );
+        resolve(true);
+      });
     });
   });
 }
