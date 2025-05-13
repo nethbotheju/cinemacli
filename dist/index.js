@@ -125420,6 +125420,16 @@ const peerflix = __nccwpck_require__(43563);
 const { spawn } = __nccwpck_require__(35317);
 const chalk = __nccwpck_require__(20813);
 
+// Handle crl+c
+process.on("SIGINT", () => {
+  console.log(
+    chalk.red.bold(
+      "\n🛑  Process interrupted. Exiting the application safely..."
+    )
+  );
+  process.exit();
+});
+
 async function main() {
   const { contentType } = await inquirer.prompt([
     {
@@ -125443,6 +125453,16 @@ async function main() {
     readline.moveCursor(process.stdout, 0, -2);
     readline.clearLine(process.stdout, 0);
     readline.cursorTo(process.stdout, 0);
+
+    if (results.length == 0) {
+      console.log(
+        chalk.yellow.bold("\n⚠️  No Results Found: ") +
+          chalk.yellow(
+            "No torrent sources were found. Please try selecting a different quality option, or make sure you are using a valid and available movie with the correct year."
+          )
+      );
+      process.exit(1);
+    }
 
     while (true) {
       const option = await selectStreamOption(results);
@@ -125487,6 +125507,17 @@ async function main() {
     readline.moveCursor(process.stdout, 0, -2);
     readline.clearLine(process.stdout, 0);
     readline.cursorTo(process.stdout, 0);
+
+    if (results.length == 0) {
+      console.log(
+        chalk.yellow.bold("\n⚠️  No Results Found: ") +
+          chalk.yellow(
+            "No torrent sources were found. Please try selecting a different quality option, or make sure you are using a valid and available TV series with the correct season and episode number."
+          )
+      );
+
+      process.exit(1);
+    }
 
     while (true) {
       const option = await selectStreamOption(results);
@@ -125834,7 +125865,7 @@ function openInVlc(magnetURL) {
           chalk.yellow(
             "\n💡 Alternatively, you can copy the HTTP stream URL and open it in any video player that supports streaming.\n" +
               "⚠️  Regardless of whether you're using VLC or another player, please do not close this terminal — the streaming server will shut down if the terminal is closed.\n" +
-              "⚠️  If you close video player, make sure to terminate this terminal manually as well — otherwise, the server will keep running in the background.\n"
+              "⚠️  If you close video player, make sure to terminate this terminal manually as well — otherwise, the server will keep running in the background."
           )
         );
         resolve(true);
