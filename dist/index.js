@@ -31835,7 +31835,7 @@ module.exports = class Choices {
 
 "use strict";
 
-var chalk = __nccwpck_require__(20813);
+var chalk = __nccwpck_require__(31840);
 var figures = __nccwpck_require__(21081);
 
 /**
@@ -31889,7 +31889,7 @@ var _ = {
   defaults: __nccwpck_require__(69571),
   clone: __nccwpck_require__(98084),
 };
-var chalk = __nccwpck_require__(20813);
+var chalk = __nccwpck_require__(31840);
 var runAsync = __nccwpck_require__(88676);
 var { filter, flatMap, share, take, takeUntil } = __nccwpck_require__(58535);
 var Choices = __nccwpck_require__(52702);
@@ -32051,7 +32051,7 @@ var _ = {
   map: __nccwpck_require__(8123),
   isString: __nccwpck_require__(75684),
 };
-var chalk = __nccwpck_require__(20813);
+var chalk = __nccwpck_require__(31840);
 var cliCursor = __nccwpck_require__(30987);
 var figures = __nccwpck_require__(21081);
 var { map, takeUntil } = __nccwpck_require__(58535);
@@ -32337,7 +32337,7 @@ var _ = {
   extend: __nccwpck_require__(32473),
   isBoolean: __nccwpck_require__(25313),
 };
-var chalk = __nccwpck_require__(20813);
+var chalk = __nccwpck_require__(31840);
 var { take, takeUntil } = __nccwpck_require__(58535);
 var Base = __nccwpck_require__(95784);
 var observe = __nccwpck_require__(54054);
@@ -32443,7 +32443,7 @@ module.exports = ConfirmPrompt;
  * `editor` type prompt
  */
 
-var chalk = __nccwpck_require__(20813);
+var chalk = __nccwpck_require__(31840);
 var editAsync = (__nccwpck_require__(42965)/* .editAsync */ .xV);
 var Base = __nccwpck_require__(95784);
 var observe = __nccwpck_require__(54054);
@@ -32557,7 +32557,7 @@ var _ = {
   isNumber: __nccwpck_require__(21568),
   findIndex: __nccwpck_require__(86048),
 };
-var chalk = __nccwpck_require__(20813);
+var chalk = __nccwpck_require__(31840);
 var { map, takeUntil } = __nccwpck_require__(58535);
 var Base = __nccwpck_require__(95784);
 var Separator = __nccwpck_require__(23397);
@@ -32840,7 +32840,7 @@ module.exports = ExpandPrompt;
  * `input` type prompt
  */
 
-var chalk = __nccwpck_require__(20813);
+var chalk = __nccwpck_require__(31840);
 var { map, takeUntil } = __nccwpck_require__(58535);
 var Base = __nccwpck_require__(95784);
 var observe = __nccwpck_require__(54054);
@@ -32966,7 +32966,7 @@ var _ = {
   findIndex: __nccwpck_require__(86048),
   isString: __nccwpck_require__(75684),
 };
-var chalk = __nccwpck_require__(20813);
+var chalk = __nccwpck_require__(31840);
 var figures = __nccwpck_require__(21081);
 var cliCursor = __nccwpck_require__(30987);
 var runAsync = __nccwpck_require__(88676);
@@ -33217,7 +33217,7 @@ module.exports = NumberPrompt;
  * `password` type prompt
  */
 
-var chalk = __nccwpck_require__(20813);
+var chalk = __nccwpck_require__(31840);
 var { map, takeUntil } = __nccwpck_require__(58535);
 var Base = __nccwpck_require__(95784);
 var observe = __nccwpck_require__(54054);
@@ -33343,7 +33343,7 @@ var _ = {
   isNumber: __nccwpck_require__(21568),
   findIndex: __nccwpck_require__(86048),
 };
-var chalk = __nccwpck_require__(20813);
+var chalk = __nccwpck_require__(31840);
 var { map, takeUntil } = __nccwpck_require__(58535);
 var Base = __nccwpck_require__(95784);
 var Separator = __nccwpck_require__(23397);
@@ -34023,7 +34023,7 @@ var _ = {
   sum: __nccwpck_require__(81566),
   flatten: __nccwpck_require__(36091),
 };
-var chalk = __nccwpck_require__(20813);
+var chalk = __nccwpck_require__(31840);
 
 /**
  * The paginator returns a subset of the choices if the list is too long.
@@ -34342,6 +34342,432 @@ exports.fetchAsyncQuestionProperty = function (question, prop, answers) {
       return question;
     })
   );
+};
+
+
+/***/ }),
+
+/***/ 31840:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
+const ansiStyles = __nccwpck_require__(37920);
+const {stdout: stdoutColor, stderr: stderrColor} = __nccwpck_require__(30454);
+const {
+	stringReplaceAll,
+	stringEncaseCRLFWithFirstIndex
+} = __nccwpck_require__(13514);
+
+const {isArray} = Array;
+
+// `supportsColor.level` → `ansiStyles.color[name]` mapping
+const levelMapping = [
+	'ansi',
+	'ansi',
+	'ansi256',
+	'ansi16m'
+];
+
+const styles = Object.create(null);
+
+const applyOptions = (object, options = {}) => {
+	if (options.level && !(Number.isInteger(options.level) && options.level >= 0 && options.level <= 3)) {
+		throw new Error('The `level` option should be an integer from 0 to 3');
+	}
+
+	// Detect level if not set manually
+	const colorLevel = stdoutColor ? stdoutColor.level : 0;
+	object.level = options.level === undefined ? colorLevel : options.level;
+};
+
+class ChalkClass {
+	constructor(options) {
+		// eslint-disable-next-line no-constructor-return
+		return chalkFactory(options);
+	}
+}
+
+const chalkFactory = options => {
+	const chalk = {};
+	applyOptions(chalk, options);
+
+	chalk.template = (...arguments_) => chalkTag(chalk.template, ...arguments_);
+
+	Object.setPrototypeOf(chalk, Chalk.prototype);
+	Object.setPrototypeOf(chalk.template, chalk);
+
+	chalk.template.constructor = () => {
+		throw new Error('`chalk.constructor()` is deprecated. Use `new chalk.Instance()` instead.');
+	};
+
+	chalk.template.Instance = ChalkClass;
+
+	return chalk.template;
+};
+
+function Chalk(options) {
+	return chalkFactory(options);
+}
+
+for (const [styleName, style] of Object.entries(ansiStyles)) {
+	styles[styleName] = {
+		get() {
+			const builder = createBuilder(this, createStyler(style.open, style.close, this._styler), this._isEmpty);
+			Object.defineProperty(this, styleName, {value: builder});
+			return builder;
+		}
+	};
+}
+
+styles.visible = {
+	get() {
+		const builder = createBuilder(this, this._styler, true);
+		Object.defineProperty(this, 'visible', {value: builder});
+		return builder;
+	}
+};
+
+const usedModels = ['rgb', 'hex', 'keyword', 'hsl', 'hsv', 'hwb', 'ansi', 'ansi256'];
+
+for (const model of usedModels) {
+	styles[model] = {
+		get() {
+			const {level} = this;
+			return function (...arguments_) {
+				const styler = createStyler(ansiStyles.color[levelMapping[level]][model](...arguments_), ansiStyles.color.close, this._styler);
+				return createBuilder(this, styler, this._isEmpty);
+			};
+		}
+	};
+}
+
+for (const model of usedModels) {
+	const bgModel = 'bg' + model[0].toUpperCase() + model.slice(1);
+	styles[bgModel] = {
+		get() {
+			const {level} = this;
+			return function (...arguments_) {
+				const styler = createStyler(ansiStyles.bgColor[levelMapping[level]][model](...arguments_), ansiStyles.bgColor.close, this._styler);
+				return createBuilder(this, styler, this._isEmpty);
+			};
+		}
+	};
+}
+
+const proto = Object.defineProperties(() => {}, {
+	...styles,
+	level: {
+		enumerable: true,
+		get() {
+			return this._generator.level;
+		},
+		set(level) {
+			this._generator.level = level;
+		}
+	}
+});
+
+const createStyler = (open, close, parent) => {
+	let openAll;
+	let closeAll;
+	if (parent === undefined) {
+		openAll = open;
+		closeAll = close;
+	} else {
+		openAll = parent.openAll + open;
+		closeAll = close + parent.closeAll;
+	}
+
+	return {
+		open,
+		close,
+		openAll,
+		closeAll,
+		parent
+	};
+};
+
+const createBuilder = (self, _styler, _isEmpty) => {
+	const builder = (...arguments_) => {
+		if (isArray(arguments_[0]) && isArray(arguments_[0].raw)) {
+			// Called as a template literal, for example: chalk.red`2 + 3 = {bold ${2+3}}`
+			return applyStyle(builder, chalkTag(builder, ...arguments_));
+		}
+
+		// Single argument is hot path, implicit coercion is faster than anything
+		// eslint-disable-next-line no-implicit-coercion
+		return applyStyle(builder, (arguments_.length === 1) ? ('' + arguments_[0]) : arguments_.join(' '));
+	};
+
+	// We alter the prototype because we must return a function, but there is
+	// no way to create a function with a different prototype
+	Object.setPrototypeOf(builder, proto);
+
+	builder._generator = self;
+	builder._styler = _styler;
+	builder._isEmpty = _isEmpty;
+
+	return builder;
+};
+
+const applyStyle = (self, string) => {
+	if (self.level <= 0 || !string) {
+		return self._isEmpty ? '' : string;
+	}
+
+	let styler = self._styler;
+
+	if (styler === undefined) {
+		return string;
+	}
+
+	const {openAll, closeAll} = styler;
+	if (string.indexOf('\u001B') !== -1) {
+		while (styler !== undefined) {
+			// Replace any instances already present with a re-opening code
+			// otherwise only the part of the string until said closing code
+			// will be colored, and the rest will simply be 'plain'.
+			string = stringReplaceAll(string, styler.close, styler.open);
+
+			styler = styler.parent;
+		}
+	}
+
+	// We can move both next actions out of loop, because remaining actions in loop won't have
+	// any/visible effect on parts we add here. Close the styling before a linebreak and reopen
+	// after next line to fix a bleed issue on macOS: https://github.com/chalk/chalk/pull/92
+	const lfIndex = string.indexOf('\n');
+	if (lfIndex !== -1) {
+		string = stringEncaseCRLFWithFirstIndex(string, closeAll, openAll, lfIndex);
+	}
+
+	return openAll + string + closeAll;
+};
+
+let template;
+const chalkTag = (chalk, ...strings) => {
+	const [firstString] = strings;
+
+	if (!isArray(firstString) || !isArray(firstString.raw)) {
+		// If chalk() was called by itself or with a string,
+		// return the string itself as a string.
+		return strings.join(' ');
+	}
+
+	const arguments_ = strings.slice(1);
+	const parts = [firstString.raw[0]];
+
+	for (let i = 1; i < firstString.length; i++) {
+		parts.push(
+			String(arguments_[i - 1]).replace(/[{}\\]/g, '\\$&'),
+			String(firstString.raw[i])
+		);
+	}
+
+	if (template === undefined) {
+		template = __nccwpck_require__(72527);
+	}
+
+	return template(chalk, parts.join(''));
+};
+
+Object.defineProperties(Chalk.prototype, styles);
+
+const chalk = Chalk(); // eslint-disable-line new-cap
+chalk.supportsColor = stdoutColor;
+chalk.stderr = Chalk({level: stderrColor ? stderrColor.level : 0}); // eslint-disable-line new-cap
+chalk.stderr.supportsColor = stderrColor;
+
+module.exports = chalk;
+
+
+/***/ }),
+
+/***/ 72527:
+/***/ ((module) => {
+
+"use strict";
+
+const TEMPLATE_REGEX = /(?:\\(u(?:[a-f\d]{4}|\{[a-f\d]{1,6}\})|x[a-f\d]{2}|.))|(?:\{(~)?(\w+(?:\([^)]*\))?(?:\.\w+(?:\([^)]*\))?)*)(?:[ \t]|(?=\r?\n)))|(\})|((?:.|[\r\n\f])+?)/gi;
+const STYLE_REGEX = /(?:^|\.)(\w+)(?:\(([^)]*)\))?/g;
+const STRING_REGEX = /^(['"])((?:\\.|(?!\1)[^\\])*)\1$/;
+const ESCAPE_REGEX = /\\(u(?:[a-f\d]{4}|{[a-f\d]{1,6}})|x[a-f\d]{2}|.)|([^\\])/gi;
+
+const ESCAPES = new Map([
+	['n', '\n'],
+	['r', '\r'],
+	['t', '\t'],
+	['b', '\b'],
+	['f', '\f'],
+	['v', '\v'],
+	['0', '\0'],
+	['\\', '\\'],
+	['e', '\u001B'],
+	['a', '\u0007']
+]);
+
+function unescape(c) {
+	const u = c[0] === 'u';
+	const bracket = c[1] === '{';
+
+	if ((u && !bracket && c.length === 5) || (c[0] === 'x' && c.length === 3)) {
+		return String.fromCharCode(parseInt(c.slice(1), 16));
+	}
+
+	if (u && bracket) {
+		return String.fromCodePoint(parseInt(c.slice(2, -1), 16));
+	}
+
+	return ESCAPES.get(c) || c;
+}
+
+function parseArguments(name, arguments_) {
+	const results = [];
+	const chunks = arguments_.trim().split(/\s*,\s*/g);
+	let matches;
+
+	for (const chunk of chunks) {
+		const number = Number(chunk);
+		if (!Number.isNaN(number)) {
+			results.push(number);
+		} else if ((matches = chunk.match(STRING_REGEX))) {
+			results.push(matches[2].replace(ESCAPE_REGEX, (m, escape, character) => escape ? unescape(escape) : character));
+		} else {
+			throw new Error(`Invalid Chalk template style argument: ${chunk} (in style '${name}')`);
+		}
+	}
+
+	return results;
+}
+
+function parseStyle(style) {
+	STYLE_REGEX.lastIndex = 0;
+
+	const results = [];
+	let matches;
+
+	while ((matches = STYLE_REGEX.exec(style)) !== null) {
+		const name = matches[1];
+
+		if (matches[2]) {
+			const args = parseArguments(name, matches[2]);
+			results.push([name].concat(args));
+		} else {
+			results.push([name]);
+		}
+	}
+
+	return results;
+}
+
+function buildStyle(chalk, styles) {
+	const enabled = {};
+
+	for (const layer of styles) {
+		for (const style of layer.styles) {
+			enabled[style[0]] = layer.inverse ? null : style.slice(1);
+		}
+	}
+
+	let current = chalk;
+	for (const [styleName, styles] of Object.entries(enabled)) {
+		if (!Array.isArray(styles)) {
+			continue;
+		}
+
+		if (!(styleName in current)) {
+			throw new Error(`Unknown Chalk style: ${styleName}`);
+		}
+
+		current = styles.length > 0 ? current[styleName](...styles) : current[styleName];
+	}
+
+	return current;
+}
+
+module.exports = (chalk, temporary) => {
+	const styles = [];
+	const chunks = [];
+	let chunk = [];
+
+	// eslint-disable-next-line max-params
+	temporary.replace(TEMPLATE_REGEX, (m, escapeCharacter, inverse, style, close, character) => {
+		if (escapeCharacter) {
+			chunk.push(unescape(escapeCharacter));
+		} else if (style) {
+			const string = chunk.join('');
+			chunk = [];
+			chunks.push(styles.length === 0 ? string : buildStyle(chalk, styles)(string));
+			styles.push({inverse, styles: parseStyle(style)});
+		} else if (close) {
+			if (styles.length === 0) {
+				throw new Error('Found extraneous } in Chalk template literal');
+			}
+
+			chunks.push(buildStyle(chalk, styles)(chunk.join('')));
+			chunk = [];
+			styles.pop();
+		} else {
+			chunk.push(character);
+		}
+	});
+
+	chunks.push(chunk.join(''));
+
+	if (styles.length > 0) {
+		const errMessage = `Chalk template literal is missing ${styles.length} closing bracket${styles.length === 1 ? '' : 's'} (\`}\`)`;
+		throw new Error(errMessage);
+	}
+
+	return chunks.join('');
+};
+
+
+/***/ }),
+
+/***/ 13514:
+/***/ ((module) => {
+
+"use strict";
+
+
+const stringReplaceAll = (string, substring, replacer) => {
+	let index = string.indexOf(substring);
+	if (index === -1) {
+		return string;
+	}
+
+	const substringLength = substring.length;
+	let endIndex = 0;
+	let returnValue = '';
+	do {
+		returnValue += string.substr(endIndex, index - endIndex) + substring + replacer;
+		endIndex = index + substringLength;
+		index = string.indexOf(substring, endIndex);
+	} while (index !== -1);
+
+	returnValue += string.substr(endIndex);
+	return returnValue;
+};
+
+const stringEncaseCRLFWithFirstIndex = (string, prefix, postfix, index) => {
+	let endIndex = 0;
+	let returnValue = '';
+	do {
+		const gotCR = string[index - 1] === '\r';
+		returnValue += string.substr(endIndex, (gotCR ? index - 1 : index) - endIndex) + prefix + (gotCR ? '\r\n' : '\n') + postfix;
+		endIndex = index + 1;
+		index = string.indexOf('\n', endIndex);
+	} while (index !== -1);
+
+	returnValue += string.substr(endIndex);
+	return returnValue;
+};
+
+module.exports = {
+	stringReplaceAll,
+	stringEncaseCRLFWithFirstIndex
 };
 
 
@@ -124973,6 +125399,10 @@ module.exports = /*#__PURE__*/JSON.parse('[["0","\\u0000",128],["a1","｡",62],[
 var __webpack_exports__ = {};
 
 
+// Peerflix hasn't been updated in 5–7 years and still uses 'new Buffer()',
+// which is deprecated in newer Node.js versions. It should be replaced with 'Buffer.alloc()', etc.
+// Try to patch the package and fix it.
+// The problem is that the project is developed using node20 but the pkg does not support node20 it uses the node18.
 process.removeAllListeners("warning");
 process.on("warning", (e) => {
   if (e.name === "DeprecationWarning" && e.code === "DEP0005") {
@@ -124987,7 +125417,8 @@ const cheerio = __nccwpck_require__(85020);
 const axios = __nccwpck_require__(87163);
 const readline = __nccwpck_require__(23785);
 const peerflix = __nccwpck_require__(43563);
-const { exec } = __nccwpck_require__(35317);
+const { spawn } = __nccwpck_require__(35317);
+const chalk = __nccwpck_require__(20813);
 
 async function main() {
   const { contentType } = await inquirer.prompt([
@@ -125003,13 +125434,31 @@ async function main() {
     const { movieName, movieYear, movieQuality } = await movie();
 
     const keyword = `${movieName} ${movieYear} ${movieQuality}`;
+    console.log(chalk.blue.bold("\n🔍 Searching movies..."));
+
     const htmlResponse = await movieGet(keyword);
     const results = extractTop5Results(htmlResponse);
 
+    // Remove "searching movies" line
+    readline.moveCursor(process.stdout, 0, -2);
+    readline.clearLine(process.stdout, 0);
+    readline.cursorTo(process.stdout, 0);
+
     const option = await selectStreamOption(results);
+
+    console.log(chalk.blue.bold("\n🔍 Extracting magnet link..."));
     const magnetURL = await getMagentURL(option.link);
 
-    console.log("The magnetURL is: " + magnetURL);
+    // Remove "Extracting magnet link" line
+    readline.moveCursor(process.stdout, 0, -2);
+    readline.clearLine(process.stdout, 0);
+    readline.cursorTo(process.stdout, 0);
+
+    console.log(
+      chalk.green.bold("\n🔗 The magnet URL is: ") +
+        chalk.white.underline(magnetURL) +
+        "\n"
+    );
 
     openInVlc(magnetURL);
   } else {
@@ -125017,13 +125466,31 @@ async function main() {
       await tvSeries();
 
     const keyword = `${seriesName} s${seriesSeason}e${seriesEpisode} ${seriesQuality}`;
+    console.log(chalk.blue.bold("\n🔍 Searching TV series..."));
+
     const htmlResponse = await tvGet(keyword);
     const results = extractTop5Results(htmlResponse);
 
+    // Remove "Searching TV series" line
+    readline.moveCursor(process.stdout, 0, -2);
+    readline.clearLine(process.stdout, 0);
+    readline.cursorTo(process.stdout, 0);
+
     const option = await selectStreamOption(results);
+
+    console.log(chalk.blue.bold("\n🔍 Extracting magnet link..."));
     const magnetURL = await getMagentURL(option.link);
 
-    console.log("The magnetURL is: " + magnetURL);
+    // Remove "Extracting magnet link" line
+    readline.moveCursor(process.stdout, 0, -2);
+    readline.clearLine(process.stdout, 0);
+    readline.cursorTo(process.stdout, 0);
+
+    console.log(
+      chalk.green.bold("\n🔗 The magnet URL is: ") +
+        chalk.white.underline(magnetURL) +
+        "\n"
+    );
 
     openInVlc(magnetURL);
   }
@@ -125153,8 +125620,10 @@ async function movieGet(keyword) {
     const response = await axios.get(url);
     return response.data;
   } catch (error) {
-    console.error("Error:", error.message);
-    return "";
+    console.error(
+      chalk.red.bold("❌ Error:") + chalk.white(` ${error.message}`)
+    );
+    process.exit(1);
   }
 }
 
@@ -125166,8 +125635,10 @@ async function tvGet(keyword) {
     const response = await axios.get(url);
     return response.data;
   } catch (error) {
-    console.error("Error:", error.message);
-    return "";
+    console.error(
+      chalk.red.bold("❌ Error:") + chalk.white(` ${error.message}`)
+    );
+    process.exit(1);
   }
 }
 
@@ -125182,7 +125653,10 @@ function selectStreamOption(results) {
   )} | ${"Seeders".padEnd(seedersWidth)} | ${"Leechers".padEnd(leechersWidth)}`;
   const separator = "-".repeat(header.length);
 
-  console.log("\nSelect the server you need to stream:\n");
+  console.log(
+    chalk.yellow.bold("\n 📡 Select the server you need to stream: \n")
+  );
+
   console.log(header);
   console.log(separator);
 
@@ -125202,14 +125676,13 @@ function selectStreamOption(results) {
 
   return new Promise((resolve, reject) => {
     function ask() {
-      rl.question("\nEnter your choice: ", (answer) => {
+      rl.question(chalk.cyan.bold("\n👉 Enter your choice: "), (answer) => {
         const index = parseInt(answer) - 1;
         if (!isNaN(index) && index >= 0 && index < results.length) {
-          console.log(`\nYou selected: ${results[index].name}`);
           rl.close();
           resolve(results[index]);
         } else {
-          console.log("Invalid selection. Try again.");
+          console.log(chalk.red.bold("❌ Invalid selection. Try again."));
           ask();
         }
       });
@@ -125230,30 +125703,70 @@ async function getMagentURL(url) {
     if (match && match[1]) {
       return match[1];
     } else {
-      console.error("mainMagnetURL not found in the HTML content.");
-      return null;
+      console.error(
+        chalk.red.bold("❌ Error:") +
+          chalk.white(" mainMagnetURL not found in the HTML content.")
+      );
+      process.exit(1);
     }
   } catch (error) {
-    console.error("Error:", error.message);
-    return "";
+    console.error(
+      chalk.red.bold("❌ Error:") + chalk.white(` ${error.message}`)
+    );
+    process.exit(1);
   }
 }
 
 function openInVlc(magnetURL) {
+  console.log(
+    chalk.green.bold("🚀 Creating and starting the local streaming server...")
+  );
+
   const engine = peerflix(magnetURL, { vlc: true });
 
   engine.on("ready", () => {
     const url = `http://localhost:${engine.server.address().port}/`;
 
-    console.log("Streaming to:", url);
+    // Remove "Creating and starting the local streaming server" line
+    readline.moveCursor(process.stdout, 0, -1);
+    readline.clearLine(process.stdout, 0);
+    readline.cursorTo(process.stdout, 0);
 
-    exec(`vlc "${url}"`, (err) => {
-      if (err) {
-        console.error("Failed to open VLC:", err);
-        console.log(
-          "Please make sure VLC is installed and its path is added to your environment variables. Alternatively, you can copy the HTTP stream URL and open it in any video player that supports streaming."
-        );
-      }
+    console.log(
+      chalk.green.bold("📺 The video is streaming to: ") +
+        chalk.cyan.underline(url)
+    );
+
+    console.log(
+      chalk.cyan.bold("\n🎬 Opening video stream with VLC player...")
+    );
+
+    const vlc = spawn("vlc", [url]);
+
+    vlc.on("spawn", () => {
+      console.log(chalk.green.bold("\n✔️ VLC launched successfully"));
+
+      console.log(
+        chalk.yellow.bold("\n⚠️  Warning:") +
+          chalk.yellow(
+            " Please do not close this terminal — the streaming server will shut down if you do. Make sure the terminal stays open while streaming through VLC.\n" +
+              " Also, if you decide to close VLC, please make sure to terminate this terminal as well — otherwise, the server will keep running in the background.\n"
+          )
+      );
+    });
+
+    vlc.on("error", (err) => {
+      console.error(chalk.red.bold("\n❌ Failed to open VLC:"), chalk.red(err));
+      console.log(
+        chalk.yellow(
+          "\n⚠️  Please make sure VLC is installed and its path is added to your environment variables."
+        )
+      );
+      chalk.yellow(
+        "\n💡 Alternatively, you can copy the HTTP stream URL and open it in any video player that supports streaming.\n" +
+          "⚠️  Regardless of whether you're using VLC or another player, please do not close this terminal — the streaming server will shut down if the terminal is closed.\n" +
+          "⚠️  If you close video player, make sure to terminate this terminal manually as well — otherwise, the server will keep running in the background.\n"
+      );
     });
   });
 }

@@ -3,6 +3,7 @@
 // Peerflix hasn't been updated in 5–7 years and still uses 'new Buffer()',
 // which is deprecated in newer Node.js versions. It should be replaced with 'Buffer.alloc()', etc.
 // Try to patch the package and fix it.
+// The problem is that the project is developed using node20 but the pkg does not support node20 it uses the node18.
 process.removeAllListeners("warning");
 process.on("warning", (e) => {
   if (e.name === "DeprecationWarning" && e.code === "DEP0005") {
@@ -17,7 +18,8 @@ const cheerio = require("cheerio");
 const axios = require("axios");
 const readline = require("readline");
 const peerflix = require("peerflix");
-const { exec } = require("child_process");
+const { spawn } = require("child_process");
+const chalk = require("chalk");
 
 async function main() {
   const { contentType } = await inquirer.prompt([
@@ -33,13 +35,31 @@ async function main() {
     const { movieName, movieYear, movieQuality } = await movie();
 
     const keyword = `${movieName} ${movieYear} ${movieQuality}`;
+    console.log(chalk.blue.bold("\n🔍 Searching movies..."));
+
     const htmlResponse = await movieGet(keyword);
     const results = extractTop5Results(htmlResponse);
 
+    // Remove "searching movies" line
+    readline.moveCursor(process.stdout, 0, -2);
+    readline.clearLine(process.stdout, 0);
+    readline.cursorTo(process.stdout, 0);
+
     const option = await selectStreamOption(results);
+
+    console.log(chalk.blue.bold("\n🔍 Extracting magnet link..."));
     const magnetURL = await getMagentURL(option.link);
 
-    console.log("The magnetURL is: " + magnetURL);
+    // Remove "Extracting magnet link" line
+    readline.moveCursor(process.stdout, 0, -2);
+    readline.clearLine(process.stdout, 0);
+    readline.cursorTo(process.stdout, 0);
+
+    console.log(
+      chalk.green.bold("\n🔗 The magnet URL is: ") +
+        chalk.white.underline(magnetURL) +
+        "\n"
+    );
 
     openInVlc(magnetURL);
   } else {
@@ -47,13 +67,31 @@ async function main() {
       await tvSeries();
 
     const keyword = `${seriesName} s${seriesSeason}e${seriesEpisode} ${seriesQuality}`;
+    console.log(chalk.blue.bold("\n🔍 Searching TV series..."));
+
     const htmlResponse = await tvGet(keyword);
     const results = extractTop5Results(htmlResponse);
 
+    // Remove "Searching TV series" line
+    readline.moveCursor(process.stdout, 0, -2);
+    readline.clearLine(process.stdout, 0);
+    readline.cursorTo(process.stdout, 0);
+
     const option = await selectStreamOption(results);
+
+    console.log(chalk.blue.bold("\n🔍 Extracting magnet link..."));
     const magnetURL = await getMagentURL(option.link);
 
-    console.log("The magnetURL is: " + magnetURL);
+    // Remove "Extracting magnet link" line
+    readline.moveCursor(process.stdout, 0, -2);
+    readline.clearLine(process.stdout, 0);
+    readline.cursorTo(process.stdout, 0);
+
+    console.log(
+      chalk.green.bold("\n🔗 The magnet URL is: ") +
+        chalk.white.underline(magnetURL) +
+        "\n"
+    );
 
     openInVlc(magnetURL);
   }
@@ -183,8 +221,10 @@ async function movieGet(keyword) {
     const response = await axios.get(url);
     return response.data;
   } catch (error) {
-    console.error("Error:", error.message);
-    return "";
+    console.error(
+      chalk.red.bold("❌ Error:") + chalk.white(` ${error.message}`)
+    );
+    process.exit(1);
   }
 }
 
@@ -196,8 +236,10 @@ async function tvGet(keyword) {
     const response = await axios.get(url);
     return response.data;
   } catch (error) {
-    console.error("Error:", error.message);
-    return "";
+    console.error(
+      chalk.red.bold("❌ Error:") + chalk.white(` ${error.message}`)
+    );
+    process.exit(1);
   }
 }
 
@@ -212,7 +254,10 @@ function selectStreamOption(results) {
   )} | ${"Seeders".padEnd(seedersWidth)} | ${"Leechers".padEnd(leechersWidth)}`;
   const separator = "-".repeat(header.length);
 
-  console.log("\nSelect the server you need to stream:\n");
+  console.log(
+    chalk.yellow.bold("\n 📡 Select the server you need to stream: \n")
+  );
+
   console.log(header);
   console.log(separator);
 
@@ -232,14 +277,13 @@ function selectStreamOption(results) {
 
   return new Promise((resolve, reject) => {
     function ask() {
-      rl.question("\nEnter your choice: ", (answer) => {
+      rl.question(chalk.cyan.bold("\n👉 Enter your choice: "), (answer) => {
         const index = parseInt(answer) - 1;
         if (!isNaN(index) && index >= 0 && index < results.length) {
-          console.log(`\nYou selected: ${results[index].name}`);
           rl.close();
           resolve(results[index]);
         } else {
-          console.log("Invalid selection. Try again.");
+          console.log(chalk.red.bold("❌ Invalid selection. Try again."));
           ask();
         }
       });
@@ -260,30 +304,70 @@ async function getMagentURL(url) {
     if (match && match[1]) {
       return match[1];
     } else {
-      console.error("mainMagnetURL not found in the HTML content.");
-      return null;
+      console.error(
+        chalk.red.bold("❌ Error:") +
+          chalk.white(" mainMagnetURL not found in the HTML content.")
+      );
+      process.exit(1);
     }
   } catch (error) {
-    console.error("Error:", error.message);
-    return "";
+    console.error(
+      chalk.red.bold("❌ Error:") + chalk.white(` ${error.message}`)
+    );
+    process.exit(1);
   }
 }
 
 function openInVlc(magnetURL) {
+  console.log(
+    chalk.green.bold("🚀 Creating and starting the local streaming server...")
+  );
+
   const engine = peerflix(magnetURL, { vlc: true });
 
   engine.on("ready", () => {
     const url = `http://localhost:${engine.server.address().port}/`;
 
-    console.log("Streaming to:", url);
+    // Remove "Creating and starting the local streaming server" line
+    readline.moveCursor(process.stdout, 0, -1);
+    readline.clearLine(process.stdout, 0);
+    readline.cursorTo(process.stdout, 0);
 
-    exec(`vlc "${url}"`, (err) => {
-      if (err) {
-        console.error("Failed to open VLC:", err);
-        console.log(
-          "Please make sure VLC is installed and its path is added to your environment variables. Alternatively, you can copy the HTTP stream URL and open it in any video player that supports streaming."
-        );
-      }
+    console.log(
+      chalk.green.bold("📺 The video is streaming to: ") +
+        chalk.cyan.underline(url)
+    );
+
+    console.log(
+      chalk.cyan.bold("\n🎬 Opening video stream with VLC player...")
+    );
+
+    const vlc = spawn("vlc", [url]);
+
+    vlc.on("spawn", () => {
+      console.log(chalk.green.bold("\n✔️ VLC launched successfully"));
+
+      console.log(
+        chalk.yellow.bold("\n⚠️  Warning:") +
+          chalk.yellow(
+            " Please do not close this terminal — the streaming server will shut down if you do. Make sure the terminal stays open while streaming through VLC.\n" +
+              " Also, if you decide to close VLC, please make sure to terminate this terminal as well — otherwise, the server will keep running in the background.\n"
+          )
+      );
+    });
+
+    vlc.on("error", (err) => {
+      console.error(chalk.red.bold("\n❌ Failed to open VLC:"), chalk.red(err));
+      console.log(
+        chalk.yellow(
+          "\n⚠️  Please make sure VLC is installed and its path is added to your environment variables."
+        )
+      );
+      chalk.yellow(
+        "\n💡 Alternatively, you can copy the HTTP stream URL and open it in any video player that supports streaming.\n" +
+          "⚠️  Regardless of whether you're using VLC or another player, please do not close this terminal — the streaming server will shut down if the terminal is closed.\n" +
+          "⚠️  If you close video player, make sure to terminate this terminal manually as well — otherwise, the server will keep running in the background.\n"
+      );
     });
   });
 }
