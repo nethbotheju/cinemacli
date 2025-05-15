@@ -89,6 +89,8 @@ CinemaCLI leverages the power of several open-source libraries and tools:
 * [Cheerio](https://github.com/cheeriojs/cheerio) — Fast, flexible, and lean implementation of core jQuery for server-side HTML parsing
 * [Inquirer](https://github.com/SBoudrias/Inquirer.js) — Interactive command-line prompts
 * [Peerflix](https://github.com/mafintosh/peerflix) — Streaming torrent client for Node.js
+* [ncc](https://github.com/vercel/ncc) — CLI for compiling Node.js modules into a single file
+* [pkg](https://github.com/vercel/pkg) — Package your Node.js project into an executable  
 * [Node.js](https://nodejs.org/) — JavaScript runtime environment
 * [VLC Media Player](https://www.videolan.org/vlc/) — Media player used for streaming playback
 
@@ -98,7 +100,8 @@ A big thank you to all the maintainers and contributors of these projects for th
 
 ## 📄 License
 
-MIT License
+This project is licensed under the [MIT License](LICENSE).
+You are free to use, modify, and distribute this software in accordance with the terms of the license.
 
 ---
 
