@@ -56,6 +56,60 @@ Follow the prompts to search and stream your content.
 
 * VLC Media Player (must be installed and accessible via the command line)
 
+If not, follow the steps below for your operating system to add VLC to your command line:
+
+### macOS (or Linux)
+
+Add the following line to your shell config file (adjust the path if VLC is installed elsewhere):
+
+```bash
+echo 'export PATH="/Applications/VLC.app/Contents/MacOS:$PATH"' >> ~/.zshrc
+source ~/.zshrc
+```
+
+> If you use Bash instead of Zsh, replace `~/.zshrc` with `~/.bash_profile`.
+
+### Windows
+
+#### Using PowerShell (Recommended)
+
+Run this in **PowerShell** (not Command Prompt):
+
+```powershell
+[Environment]::SetEnvironmentVariable("PATH", $env:PATH + ";C:\Program Files\VideoLAN\VLC", "User")
+```
+
+#### OR Using Command Prompt
+
+Run this in **Command Prompt**:
+
+```cmd
+setx PATH "%PATH%;C:\Program Files\VideoLAN\VLC"
+```
+
+> If VLC is installed in a different directory, adjust the path accordingly.  
+> After this, **restart your terminal or system** for the change to take effect.
+
+#### Manually via Environment Variables Editor
+
+If you prefer not to modify your PATH using the command line, you can add VLC manually:
+
+1. Open the Windows **Environment Variables** editor (`System Properties` > `Advanced` > `Environment Variables`).
+2. Under "User variables" or "System variables", find and select the `Path` variable, then click **Edit**.
+3. Click **New** and add the path to your VLC installation directory (e.g., `C:\Program Files\VideoLAN\VLC`).
+4. Click **OK** to save and close all dialogs.
+5. Restart your terminal or system for the changes to take effect.
+
+---
+
+### Verify it works
+
+After adding to PATH, run this command in a new terminal to confirm:
+
+```sh
+vlc --version
+```
+
 ---
 
 ## 🐞 Reporting Issues
