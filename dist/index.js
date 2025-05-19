@@ -125406,7 +125406,6 @@ var __webpack_exports__ = {};
 process.removeAllListeners("warning");
 process.on("warning", (e) => {
   if (e.name === "DeprecationWarning" && e.code === "DEP0005") {
-    // Ignore the Buffer() deprecation warning silently
   } else {
     console.warn(e);
   }
@@ -125622,15 +125621,13 @@ main();
 function extractTop5Results(html) {
   const $ = cheerio.load(html);
   const results = [];
-  const baseUrl = "https://1337x.to"; // Define the base URL
+  const baseUrl = "https://1337x.to";
 
-  // Select the table rows, limit to the first 5
   const rows = $("table.table-list tbody tr").slice(0, 5);
 
   rows.each((index, element) => {
     const $row = $(element);
 
-    // Find the second <a> tag within the name column for name and link
     const nameLinkElement = $row.find("td.coll-1.name a").eq(1);
     const name = nameLinkElement.text().trim();
     const relativeLink = nameLinkElement.attr("href");
@@ -125642,11 +125639,9 @@ function extractTop5Results(html) {
       parseInt($row.find("td.coll-3.leeches").text().trim(), 10) || 0;
     const time = $row.find("td.coll-date").text().trim();
 
-    // Extract size text (it's the first text node within the td)
     const sizeElement = $row.find("td.coll-4");
-    const size = sizeElement.contents().first().text().trim(); // Get only the first text node content
+    const size = sizeElement.contents().first().text().trim();
 
-    // Find the uploader link text
     const uploaderLinkElement = $row.find("td.coll-5 a");
     const uploader =
       uploaderLinkElement.length > 0
